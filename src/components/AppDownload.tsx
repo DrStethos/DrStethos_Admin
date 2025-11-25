@@ -3,21 +3,24 @@ import { Smartphone, Download } from "lucide-react";
 
 const AppDownload = () => {
   return (
-    <section className="py-20 gradient-medical">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center text-white space-y-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur flex items-center justify-center">
-              <Smartphone className="h-10 w-10" strokeWidth={2} />
-            </div>
-          </div>
+    <section className="py-20 gradient-medical relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-10">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+      </div>
 
-          <h2 className="text-4xl lg:text-5xl font-bold">
-            Download Our Mobile App
-          </h2>
-          <p className="text-xl text-white/90 leading-relaxed max-w-2xl mx-auto">
-            Take your medical career on the go. Manage shifts, respond to opportunities, and stay connected—anywhere, anytime.
-          </p>
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+          
+          {/* Left Content */}
+          <div className="text-white space-y-6 text-center lg:text-left">
+            <h2 className="text-4xl lg:text-5xl font-bold">
+              Download Our Mobile App
+            </h2>
+            <p className="text-xl text-white/90 leading-relaxed">
+              Take your medical career on the go. Manage shifts, respond to opportunities, and stay connected—anywhere, anytime.
+            </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
             <Button 
@@ -42,10 +45,53 @@ const AppDownload = () => {
             </Button>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-white/80 text-sm pt-4">
-            <Download className="h-4 w-4" />
-            <span>Over 50,000+ downloads • 4.8★ rating</span>
+            <div className="flex items-center justify-center lg:justify-start gap-2 text-white/80 text-sm pt-4">
+              <Download className="h-4 w-4" />
+              <span>Over 50,000+ downloads • 4.8★ rating</span>
+            </div>
           </div>
+
+          {/* Right - Mobile Mockup */}
+          <div className="flex justify-center lg:justify-end">
+            <div className="relative">
+              {/* Phone frame */}
+              <div className="relative w-64 h-[520px] bg-gray-900 rounded-[3rem] border-8 border-gray-800 shadow-2xl">
+                {/* Notch */}
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-3xl z-10"></div>
+                
+                {/* Screen */}
+                <div className="w-full h-full bg-gradient-to-br from-blue-50 to-white rounded-[2.3rem] overflow-hidden p-6 flex flex-col items-center justify-center">
+                  {/* App Logo */}
+                  <div className="w-32 h-32 mb-6">
+                    <img 
+                      src="/logo.png" 
+                      alt="DrStethos Logo" 
+                      className="w-full h-full object-contain drop-shadow-lg"
+                    />
+                  </div>
+                  
+                  {/* App Name */}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">DrStethos</h3>
+                  <p className="text-sm text-gray-600 text-center mb-6">Medical Recruitment Platform</p>
+                  
+                  {/* Mock UI elements */}
+                  <div className="w-full space-y-3">
+                    <div className="h-12 bg-primary rounded-xl flex items-center justify-center text-white font-semibold shadow-md">
+                      Get Started
+                    </div>
+                    <div className="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
+                    <div className="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Floating decorative elements */}
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl animate-float">
+                <Smartphone className="w-10 h-10 text-white" />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
