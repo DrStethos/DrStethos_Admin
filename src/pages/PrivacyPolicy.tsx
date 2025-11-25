@@ -1,6 +1,7 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useCallback } from "react";
 
 const PrivacyPolicy = () => {
   return (
@@ -18,160 +19,265 @@ const PrivacyPolicy = () => {
       </header>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-12 max-w-4xl">
-        <h1 className="text-4xl font-bold mb-2">Privacy Policy</h1>
-        <p className="text-muted-foreground mb-8">Last Updated: January 2025</p>
+      <main className="container mx-auto px-4 py-6 md:py-12 max-w-6xl">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2">Privacy Policy</h1>
+            <p className="text-muted-foreground mb-4 sm:mb-6">Last updated: November 25, 2025</p>
+          </div>
 
-        <div className="prose prose-gray dark:prose-invert max-w-none space-y-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.print()} title="Print" className="flex-1 sm:flex-none">
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Print / Save as PDF</span>
+              <span className="sm:hidden ml-2">Print</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.print()}
+              title="Download PDF (use Print -> Save as PDF)"
+              className="flex-1 sm:flex-none">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Download PDF</span>
+              <span className="sm:hidden ml-2">Download</span>
+            </Button>
+          </div>
+        </div>
 
-          <section>
-            <p className="text-lg">
-              This Privacy Policy explains how DrStethos (“we”, “our”, “us”) collects, uses, and protects your information when you use our doctor–hospital hiring and networking platform. By using the DrStethos app or website, you agree to the practices described in this policy.
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Content column (spans 2) */}
+          <div className="md:col-span-2">
+            <div className="prose prose-gray dark:prose-invert max-w-none space-y-8">
+
+          <section id="introduction">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-4">Introduction</h2>
+            <p className="text-base sm:text-lg">
+              Welcome to <strong>DrStethos</strong> ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience on our mobile application. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our mobile application (the "App"). Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the application.
             </p>
           </section>
 
-          {/* 1. Who We Are */}
-          <section>
-            <h2 className="text-2xl font-semibold">1. Who We Are</h2>
-            <p>
-              <strong>App Name:</strong> DrStethos <br />
-              <strong>Purpose:</strong> Doctor–hospital hiring, job applications, shift management, and communication. <br />
-              <strong>Contact Email:</strong>{" "}
-              <a href="mailto:support@drstethos.com" className="text-primary underline">
-                support@drstethos.com
-              </a>{" "}
-              <br />
-              <strong>Company:</strong> DrStethos Technologies (or your business name)
-            </p>
-          </section>
+          {/* Collection of Your Information */}
+          <details id="collection" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Collection of Your Information</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                We may collect information about you in a variety of ways. The information we may collect via the App includes:
+              </p>
 
-          {/* 2. Information We Collect */}
-          <section>
-            <h2 className="text-2xl font-semibold">2. Information We Collect</h2>
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Personal Data</h3>
+              <p className="mb-2">
+                Personally identifiable information, such as your name, email address, and telephone number, and demographic information, such as your age, gender, hometown, and interests, that you voluntarily give to us when you register with the App or when you choose to participate in various activities related to the App.
+              </p>
 
-            <h3 className="text-xl font-semibold mt-4">2.1 Personal Information</h3>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Full name</li>
-              <li>Email address</li>
-              <li>Phone number</li>
-              <li>Gender & Date of birth</li>
-              <li>Education & experience</li>
-              <li>Medical registration numbers & certifications</li>
-              <li>Hospital/clinic details (for recruiters)</li>
-              <li>Profile photo (optional)</li>
-            </ul>
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Derivative Data</h3>
+              <p className="mb-2">
+                Information our servers automatically collect when you access the App, such as your IP address, your browser type, your operating system, your access times, and the pages you have viewed directly before and after accessing the App.
+              </p>
 
-            <h3 className="text-xl font-semibold mt-4">2.2 Usage Information</h3>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Job applications and submissions</li>
-              <li>Shortlisting and hiring activity</li>
-              <li>Messages exchanged between doctors and hospitals</li>
-              <li>Profile views and activity logs</li>
-            </ul>
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Mobile Device Access</h3>
+              <p className="mb-2">
+                We may request access or permission to certain features from your mobile device, including your mobile device's <strong>camera</strong>, <strong>storage</strong>, and other features. If you wish to change our access or permissions, you may do so in your device's settings.
+              </p>
 
-            <h3 className="text-xl font-semibold mt-4">2.3 Device & Technical Data</h3>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>IP address</li>
-              <li>Device model and OS version</li>
-              <li>App version</li>
-              <li>Crash logs (via Firebase Crashlytics)</li>
-              <li>Analytics (via Firebase Analytics)</li>
-            </ul>
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Mobile Device Data</h3>
+              <p>
+                Device information, such as your mobile device ID, model, and manufacturer, and information about the location of your device, if you access the App from a mobile device.
+              </p>
+            </div>
+          </details>
 
-            <h3 className="text-xl font-semibold mt-4">2.4 Third-Party Sign-In</h3>
-            <p>If you use Google Sign-In, we may receive:</p>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Name</li>
-              <li>Email</li>
-              <li>Profile picture (optional)</li>
-            </ul>
-          </section>
 
-          {/* 3. How We Collect Data */}
-          <section>
-            <h2 className="text-2xl font-semibold">3. How We Collect Your Data</h2>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Information provided manually during registration or profile setup</li>
-              <li>Automatically through device/app usage</li>
-              <li>Through Firebase (Authentication, Firestore, Crashlytics, Analytics)</li>
-              <li>Through Google Sign-In</li>
-            </ul>
-          </section>
 
-          {/* 4. How We Use the Data */}
-          <section>
-            <h2 className="text-2xl font-semibold">4. How We Use Your Information</h2>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Create and manage user accounts</li>
-              <li>Enable job applications and postings</li>
-              <li>Facilitate interviews and communication</li>
-              <li>Verify identities and credentials</li>
-              <li>Improve app performance and user experience</li>
-              <li>Ensure security and prevent fraud</li>
-            </ul>
-          </section>
+          {/* Use of Your Information */}
+          <details id="use" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Use of Your Information</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                Having accurate information about you permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you via the App to:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Create and manage your account.</li>
+                <li>Email you regarding your account or order.</li>
+                <li>Fulfill and manage purchases, orders, payments, and other transactions performed related to the App.</li>
+                <li>Generate a personal profile about you to make future visits to the App more personalized.</li>
+                <li>Increase the efficiency and operation of the App.</li>
+                <li>Monitor and analyze usage and trends to improve your experience with the App.</li>
+                <li>Notify you of updates to the App.</li>
+                <li>Offer new products, services, mobile applications, and/or recommendations to you.</li>
+                <li>Perform other business activities as needed.</li>
+                <li>Prevent fraudulent transactions, monitor against theft, and protect against criminal activity.</li>
+                <li>Request feedback and contact you about your use of the App.</li>
+                <li>Resolve disputes and troubleshoot problems.</li>
+                <li>Respond to product and customer service requests.</li>
+              </ul>
+            </div>
+          </details>
 
-          {/* 5. Sharing Information */}
-          <section>
-            <h2 className="text-2xl font-semibold">5. How We Share Your Information</h2>
-            <p>We do not sell or rent your personal data.</p>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>With hospitals when you apply for a job</li>
-              <li>With doctors when hospitals shortlist or contact you</li>
-              <li>Firebase services (Auth, Firestore, Analytics, Crashlytics)</li>
-              <li>Legal authorities when required by law</li>
-            </ul>
-          </section>
+          {/* Disclosure of Your Information */}
+          <details id="disclosure" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Disclosure of Your Information</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                We may share information we have collected about you in certain situations. Your information may be disclosed as follows:
+              </p>
 
-          {/* 6. User Rights */}
-          <section>
-            <h2 className="text-2xl font-semibold">6. Your Rights</h2>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>Update your profile anytime</li>
-              <li>Request deletion of your account</li>
-              <li>Request a copy of your stored data</li>
-              <li>Stop using the app anytime</li>
-            </ul>
-          </section>
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">By Law or to Protect Rights</h3>
+              <p className="mb-4">
+                If we believe the release of information about you is necessary to respond to legal process, to investigate or remedy potential violations of our policies, or to protect the rights, property, and safety of others, we may share your information as permitted or required by any applicable law, rule, or regulation.
+              </p>
 
-          {/* 7. Children’s Policy */}
-          <section>
-            <h2 className="text-2xl font-semibold">7. Children’s Privacy</h2>
-            <p>
-              DrStethos is intended for users aged 18 and above. We do not knowingly collect data from children.
-            </p>
-          </section>
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Third-Party Service Providers</h3>
+              <p>
+                We may share your information with third parties that perform services for us or on our behalf, including payment processing, data analysis, email delivery, hosting services, customer service, and marketing assistance.
+              </p>
+            </div>
+          </details>
 
-          {/* 8. Security */}
-          <section>
-            <h2 className="text-2xl font-semibold">8. Security Measures</h2>
-            <p>
-              We use encryption, secure authentication, and industry-standard safeguards to protect your data. 
-              However, no digital platform can guarantee absolute security.
-            </p>
-          </section>
+          {/* Third-Party Services */}
+          <details id="third-party" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Third-Party Services</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                We use the following third-party services which may collect information used to identify you:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li><strong>Google Play Services</strong></li>
+                <li><strong>Firebase Analytics</strong></li>
+                <li><strong>Google Sign-In</strong></li>
+              </ul>
+              
+              <p className="mb-2">Link to privacy policy of third party service providers used by the app:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <a href="https://www.google.com/policies/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    Google Play Services
+                  </a>
+                </li>
+                <li>
+                  <a href="https://firebase.google.com/policies/analytics" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                    Firebase Analytics
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </details>
 
-          {/* 9. Changes */}
-          <section>
-            <h2 className="text-2xl font-semibold">9. Changes to This Policy</h2>
-            <p>
-              We may update this Privacy Policy from time to time. Significant changes will be notified within the app or by email.
-            </p>
-          </section>
+          {/* Policy for Children */}
+          <details id="children" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Policy for Children</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p>
+                We do not knowingly solicit information from or market to children under the age of 13. If you become aware that any data we have collected is from children under age 13, please contact us using the contact information provided below.
+              </p>
+            </div>
+          </details>
 
-          {/* 10. Contact */}
-          <section>
-            <h2 className="text-2xl font-semibold">10. Contact Us</h2>
-            <p>
-              For questions or data requests, contact:{" "}
-              <a
-                href="mailto:support@drstethos.com"
-                className="text-primary underline"
-              >
-                support@drstethos.com
-              </a>
-            </p>
-          </section>
+          {/* Security of Your Information */}
+          <details id="security" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Security of Your Information</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p>
+                We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.
+              </p>
+            </div>
+          </details>
+
+          {/* Changes to This Privacy Policy */}
+          <details id="changes" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Changes to This Privacy Policy</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p>
+                We may update this Privacy Policy from time to time in order to reflect, for example, changes to our practices or for other operational, legal, or regulatory reasons. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
+              </p>
+            </div>
+          </details>
+
+          {/* Contact Us */}
+          <details id="contact" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Contact Us</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                If you have questions or comments about this Privacy Policy, please contact us at:
+              </p>
+              <p>
+                <strong>DrStethos</strong><br />
+                <a
+                  href="mailto:stethosabhisha@gmail.com"
+                  className="text-primary underline"
+                >
+                  stethosabhisha@gmail.com
+                </a>
+              </p>
+            </div>
+          </details>
+            </div>
+          </div>
+
+          {/* TOC column */}
+          <aside className="md:col-span-1 md:sticky md:top-28 md:self-start order-first md:order-last">
+            <div className="rounded-md border p-4 bg-background/60 mb-6 md:mb-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <h3 className="text-sm font-semibold">Contents</h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 sm:flex-none"
+                    onClick={() => {
+                      document.querySelectorAll('details').forEach((d) => (d.open = true));
+                    }}>
+                    Expand All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 sm:flex-none"
+                    onClick={() => {
+                      document.querySelectorAll('details').forEach((d) => (d.open = false));
+                    }}>
+                    Collapse All
+                  </Button>
+                </div>
+              </div>
+
+              <nav className="text-sm space-y-2">
+                <a className="block text-primary hover:underline py-1 transition-colors" href="#introduction">Introduction</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#collection">Collection of Your Information</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#use">Use of Your Information</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#disclosure">Disclosure of Your Information</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#third-party">Third-Party Services</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#security">Security of Your Information</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#children">Policy for Children</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#changes">Changes to This Privacy Policy</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#contact">Contact Us</a>
+              </nav>
+            </div>
+          </aside>
         </div>
       </main>
 
