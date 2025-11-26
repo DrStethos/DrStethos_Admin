@@ -1,7 +1,6 @@
-import { ArrowLeft, Printer, Download } from "lucide-react";
+import { ArrowLeft, Printer, Download, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useCallback } from "react";
 
 const PrivacyPolicy = () => {
   return (
@@ -158,7 +157,7 @@ const PrivacyPolicy = () => {
                 <li><strong>Firebase Analytics</strong></li>
                 <li><strong>Google Sign-In</strong></li>
               </ul>
-              
+
               <p className="mb-2">Link to privacy policy of third party service providers used by the app:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
@@ -198,6 +197,58 @@ const PrivacyPolicy = () => {
               <p>
                 We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.
               </p>
+            </div>
+          </details>
+
+          {/* Account & Data Deletion */}
+          <details id="deletion" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Account & Data Deletion</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                You have the right to request deletion of your account and all associated personal data at any time. We are committed to respecting your privacy rights under GDPR, CCPA, and Google Play Store data deletion requirements.
+              </p>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">How to Request Deletion</h3>
+              <p className="mb-2">You can delete your account through the following methods:</p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li><strong>In-App:</strong> Navigate to Profile → Settings → Delete Account</li>
+                <li><strong>Email:</strong> Send a deletion request to <a href="mailto:stethosabhisha@gmail.com" className="text-primary underline">stethosabhisha@gmail.com</a></li>
+              </ul>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">What Gets Deleted</h3>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>Firebase Authentication data (email, phone number)</li>
+                <li>User profile information (name, preferences, profile picture)</li>
+                <li>Medical records and health data</li>
+                <li>Communication history (chats, messages)</li>
+                <li>App usage data and analytics linked to your account</li>
+              </ul>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">Data Retention</h3>
+              <p className="mb-2">
+                Most data is deleted within <strong>7 days</strong> of your request. However, we may retain certain data for limited periods:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li>Security and fraud prevention logs (7-30 days)</li>
+                <li>Transaction records (if required by financial regulations)</li>
+                <li>Legal compliance data (only if mandated by law)</li>
+                <li>Anonymized analytics data (cannot identify you personally)</li>
+              </ul>
+
+              <div className="mt-4 p-4 bg-primary/10 rounded-md border border-primary/20">
+                <p className="flex items-start gap-2">
+                  <Trash2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span>
+                    For detailed information about our account deletion process, data retention policies, and timelines, please visit our dedicated{" "}
+                    <Link to="/privacy-policy/delete-account" className="text-primary underline font-semibold">
+                      Account Deletion Page
+                    </Link>.
+                  </span>
+                </p>
+              </div>
             </div>
           </details>
 
@@ -272,6 +323,7 @@ const PrivacyPolicy = () => {
                 <a className="block hover:text-primary py-1 transition-colors" href="#disclosure">Disclosure of Your Information</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#third-party">Third-Party Services</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#security">Security of Your Information</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#deletion">Account & Data Deletion</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#children">Policy for Children</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#changes">Changes to This Privacy Policy</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#contact">Contact Us</a>
