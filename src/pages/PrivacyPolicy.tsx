@@ -72,6 +72,11 @@ const PrivacyPolicy = () => {
                 Personally identifiable information, such as your name, email address, and telephone number, and demographic information, such as your age, gender, hometown, and interests, that you voluntarily give to us when you register with the App or when you choose to participate in various activities related to the App.
               </p>
 
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Professional Information</h3>
+              <p className="mb-2">
+                For healthcare professionals: professional qualifications, medical licenses, certifications, specializations, work experience, and job preferences. For hospitals: institutional details, recruitment requirements, and job posting information.
+              </p>
+
               <h3 className="text-lg sm:text-xl font-semibold mt-4">Derivative Data</h3>
               <p className="mb-2">
                 Information our servers automatically collect when you access the App, such as your IP address, your browser type, your operating system, your access times, and the pages you have viewed directly before and after accessing the App.
@@ -103,6 +108,9 @@ const PrivacyPolicy = () => {
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Create and manage your account.</li>
+                <li>Facilitate job matching between healthcare professionals and hospitals.</li>
+                <li>Provide recruitment and job search services.</li>
+                <li>Communicate with you regarding job opportunities, applications, and recruitment updates.</li>
                 <li>Email you regarding your account or order.</li>
                 <li>Fulfill and manage purchases, orders, payments, and other transactions performed related to the App.</li>
                 <li>Generate a personal profile about you to make future visits to the App more personalized.</li>
@@ -110,6 +118,7 @@ const PrivacyPolicy = () => {
                 <li>Monitor and analyze usage and trends to improve your experience with the App.</li>
                 <li>Notify you of updates to the App.</li>
                 <li>Offer new products, services, mobile applications, and/or recommendations to you.</li>
+                <li>Fulfill legal obligations and comply with applicable laws and regulations.</li>
                 <li>Perform other business activities as needed.</li>
                 <li>Prevent fraudulent transactions, monitor against theft, and protect against criminal activity.</li>
                 <li>Request feedback and contact you about your use of the App.</li>
@@ -128,6 +137,17 @@ const PrivacyPolicy = () => {
             <div className="mt-3">
               <p className="mb-4">
                 We may share information we have collected about you in certain situations. Your information may be disclosed as follows:
+              </p>
+
+              <div className="p-3 bg-primary/10 rounded-md border border-primary/20 mb-4">
+                <p className="font-semibold">
+                  <strong>We do not sell your personal data.</strong> Your privacy is important to us, and we will never sell your information to third parties for marketing purposes.
+                </p>
+              </div>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4">Recruitment and Job Matching</h3>
+              <p className="mb-4">
+                For healthcare professionals: Your profile information, qualifications, and job preferences may be shared with hospitals and healthcare institutions for recruitment purposes when you apply for jobs or when your profile matches their requirements. For hospitals: Your job postings and institutional information may be shared with qualified healthcare professionals.
               </p>
 
               <h3 className="text-lg sm:text-xl font-semibold mt-4">By Law or to Protect Rights</h3>
@@ -174,6 +194,36 @@ const PrivacyPolicy = () => {
             </div>
           </details>
 
+          {/* Cookies and Tracking */}
+          <details id="cookies" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Cookies and Tracking Technologies</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                Our app may use cookies and similar tracking technologies to enhance functionality, analyze usage patterns, and improve user experience.
+              </p>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">What are Cookies?</h3>
+              <p className="mb-4">
+                Cookies are small data files stored on your device that help us remember your preferences and understand how you use our app.
+              </p>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">How We Use Cookies</h3>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li><strong>Essential Cookies:</strong> Required for basic app functionality, authentication, and security</li>
+                <li><strong>Analytics Cookies:</strong> Help us understand app usage and improve our services (via Firebase Analytics)</li>
+                <li><strong>Preference Cookies:</strong> Remember your settings and preferences for a better experience</li>
+              </ul>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">Managing Cookies</h3>
+              <p>
+                You can manage cookie preferences through your device settings. However, disabling certain cookies may affect app functionality and your user experience.
+              </p>
+            </div>
+          </details>
+
           {/* Policy for Children */}
           <details id="children" className="group bg-muted/5 rounded-md p-3 sm:p-4">
             <summary className="cursor-pointer list-none outline-none">
@@ -183,6 +233,43 @@ const PrivacyPolicy = () => {
             <div className="mt-3">
               <p>
                 We do not knowingly solicit information from or market to children under the age of 13. If you become aware that any data we have collected is from children under age 13, please contact us using the contact information provided below.
+              </p>
+            </div>
+          </details>
+
+          {/* User Rights */}
+          <details id="user-rights" className="group bg-muted/5 rounded-md p-3 sm:p-4">
+            <summary className="cursor-pointer list-none outline-none">
+              <h2 className="text-xl sm:text-2xl font-semibold inline">Your Rights and Choices</h2>
+              <span className="ml-2 text-sm text-muted-foreground group-open:rotate-180 transition-transform inline-block">▾</span>
+            </summary>
+            <div className="mt-3">
+              <p className="mb-4">
+                You have certain rights regarding your personal data as permitted by applicable law, including Indian data protection laws, GDPR, and CCPA.
+              </p>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">Your Rights Include:</h3>
+              <ul className="list-disc pl-6 space-y-2 mb-4">
+                <li><strong>Right to Access:</strong> Request a copy of the personal data we hold about you</li>
+                <li><strong>Right to Correct:</strong> Request correction of inaccurate or incomplete information</li>
+                <li><strong>Right to Delete:</strong> Request deletion of your account and personal data (see Account & Data Deletion section)</li>
+                <li><strong>Right to Data Portability:</strong> Request transfer of your data in a structured, machine-readable format</li>
+                <li><strong>Right to Object:</strong> Object to certain processing of your personal data</li>
+                <li><strong>Right to Restrict Processing:</strong> Request limitation on how we use your data</li>
+                <li><strong>Right to Withdraw Consent:</strong> Withdraw consent for data processing where consent was the legal basis</li>
+              </ul>
+
+              <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2">How to Exercise Your Rights</h3>
+              <p className="mb-2">
+                To exercise any of these rights, please contact us at:
+              </p>
+              <p className="mb-4">
+                <a href="mailto:stethosabhisha@gmail.com" className="text-primary underline">
+                  stethosabhisha@gmail.com
+                </a>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                We will respond to your request within 30 days as required by applicable law.
               </p>
             </div>
           </details>
@@ -322,6 +409,8 @@ const PrivacyPolicy = () => {
                 <a className="block hover:text-primary py-1 transition-colors" href="#use">Use of Your Information</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#disclosure">Disclosure of Your Information</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#third-party">Third-Party Services</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#cookies">Cookies & Tracking</a>
+                <a className="block hover:text-primary py-1 transition-colors" href="#user-rights">Your Rights & Choices</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#security">Security of Your Information</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#deletion">Account & Data Deletion</a>
                 <a className="block hover:text-primary py-1 transition-colors" href="#children">Policy for Children</a>
