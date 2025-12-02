@@ -37,47 +37,66 @@ const AdminHome = () => {
         const totalUsers = totalUsersSnapshot.data().count;
 
         // Get verified users count
-        const verifiedQuery = query(usersRef, where("isVerified", "==", true));
-        const verifiedSnapshot = await getCountFromServer(verifiedQuery);
-        const verifiedCount = verifiedSnapshot.data().count;
+        let verifiedCount = 0;
+        try {
+          const verifiedQuery = query(usersRef, where("isVerified", "==", true));
+          const verifiedSnapshot = await getCountFromServer(verifiedQuery);
+          verifiedCount = verifiedSnapshot.data().count;
+        } catch (err) {
+          console.log("No verified users yet:", err);
+        }
 
         // Get pending verifications count (users with profileId but not verified)
-        // Note: Firestore doesn't support NOT queries in count, so we need to calculate this
-        const onboardedQuery = query(usersRef, where("profileId", "!=", null));
-        const onboardedSnapshot = await getCountFromServer(onboardedQuery);
-        const onboardedCount = onboardedSnapshot.data().count;
+        let pendingVerifications = 0;
+        try {
+          const onboardedQuery = query(usersRef, where("profileId", "!=", null));
+          const onboardedSnapshot = await getCountFromServer(onboardedQuery);
+          const onboardedCount = onboardedSnapshot.data().count;
 
-        const onboardedAndVerifiedQuery = query(
-          usersRef,
-          where("profileId", "!=", null),
-          where("isVerified", "==", true)
-        );
-        const onboardedAndVerifiedSnapshot = await getCountFromServer(onboardedAndVerifiedQuery);
-        const pendingVerifications = onboardedCount - onboardedAndVerifiedSnapshot.data().count;
+          const onboardedAndVerifiedQuery = query(
+            usersRef,
+            where("profileId", "!=", null),
+            where("isVerified", "==", true)
+          );
+          const onboardedAndVerifiedSnapshot = await getCountFromServer(onboardedAndVerifiedQuery);
+          pendingVerifications = onboardedCount - onboardedAndVerifiedSnapshot.data().count;
+        } catch (err) {
+          console.log("Error calculating pending verifications:", err);
+        }
 
-        // Calculate verified today - need to fetch these to check verifiedAt timestamp
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayTimestamp = Timestamp.fromDate(today);
+        // Calculate verified today
+        let verifiedToday = 0;
+        try {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayTimestamp = Timestamp.fromDate(today);
 
-        const verifiedTodayQuery = query(
-          usersRef,
-          where("verifiedAt", ">=", todayTimestamp)
-        );
-        const verifiedTodaySnapshot = await getCountFromServer(verifiedTodayQuery);
-        const verifiedToday = verifiedTodaySnapshot.data().count;
+          const verifiedTodayQuery = query(
+            usersRef,
+            where("verifiedAt", ">=", todayTimestamp)
+          );
+          const verifiedTodaySnapshot = await getCountFromServer(verifiedTodayQuery);
+          verifiedToday = verifiedTodaySnapshot.data().count;
+        } catch (err) {
+          console.log("No users verified today:", err);
+        }
 
         // Get active sessions (users active in last 24 hours)
-        const yesterday = new Date();
-        yesterday.setHours(yesterday.getHours() - 24);
-        const yesterdayTimestamp = Timestamp.fromDate(yesterday);
+        let activeSessions = 0;
+        try {
+          const yesterday = new Date();
+          yesterday.setHours(yesterday.getHours() - 24);
+          const yesterdayTimestamp = Timestamp.fromDate(yesterday);
 
-        const activeQuery = query(
-          usersRef,
-          where("lastSeenAt", ">=", yesterdayTimestamp)
-        );
-        const activeSnapshot = await getCountFromServer(activeQuery);
-        const activeSessions = activeSnapshot.data().count;
+          const activeQuery = query(
+            usersRef,
+            where("lastSeenAt", ">=", yesterdayTimestamp)
+          );
+          const activeSnapshot = await getCountFromServer(activeQuery);
+          activeSessions = activeSnapshot.data().count;
+        } catch (err) {
+          console.log("No active sessions:", err);
+        }
 
         setStats({
           totalUsers,

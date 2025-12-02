@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Check, X, Clock } from "lucide-react";
+import { Search, Check, X, Clock, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { collection, query, getDocs, doc, updateDoc, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 
 interface VerificationItem {
   id: string;
@@ -21,10 +22,12 @@ interface VerificationItem {
 }
 
 const AdminVerify = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [verifications, setVerifications] = useState<VerificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [subTab, setSubTab] = useState("all"); // For pending/verified subtabs
 
   useEffect(() => {
     fetchVerifications();
@@ -65,13 +68,21 @@ const AdminVerify = () => {
 
   const handleApprove = async (id: string, uid: string) => {
     try {
+      const currentAdmin = auth.currentUser;
+      if (!currentAdmin) {
+        toast.error("Admin authentication required");
+        return;
+      }
+
       const userRef = doc(db, "users", uid);
       const verifiedAt = new Date();
 
-      // Update user document
+      // Update user document with admin information (only in users collection)
       await updateDoc(userRef, {
         isVerified: true,
         verifiedAt: verifiedAt,
+        verifiedByAdminUid: currentAdmin.uid,
+        verifiedByAdminEmail: currentAdmin.email || "N/A",
       });
 
       // Get the user's profileId and role to update the respective collection
@@ -80,7 +91,7 @@ const AdminVerify = () => {
         const collectionName = user.profileId.startsWith("doctor") ? "doctors" : "hospitals";
         const profileRef = doc(db, collectionName, user.profileId);
 
-        // Update the respective profile document
+        // Update the respective profile document (without admin info)
         await updateDoc(profileRef, {
           isVerified: true,
           verifiedAt: verifiedAt,
@@ -138,10 +149,29 @@ const AdminVerify = () => {
       item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.role.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesTab =
-      activeTab === "all" ||
-      (activeTab === "doctors" && item.role?.toLowerCase() === "doctor") ||
-      (activeTab === "hospitals" && item.role?.toLowerCase() === "hospital");
+    let matchesTab = false;
+
+    if (activeTab === "all") {
+      matchesTab = true;
+    } else if (activeTab === "pending") {
+      const isPending = !item.isVerified;
+      if (subTab === "all") {
+        matchesTab = isPending;
+      } else if (subTab === "doctors") {
+        matchesTab = isPending && item.role?.toLowerCase() === "doctor";
+      } else if (subTab === "hospitals") {
+        matchesTab = isPending && item.role?.toLowerCase() === "hospital";
+      }
+    } else if (activeTab === "verified") {
+      const isVerified = item.isVerified;
+      if (subTab === "all") {
+        matchesTab = isVerified;
+      } else if (subTab === "doctors") {
+        matchesTab = isVerified && item.role?.toLowerCase() === "doctor";
+      } else if (subTab === "hospitals") {
+        matchesTab = isVerified && item.role?.toLowerCase() === "hospital";
+      }
+    }
 
     return matchesSearch && matchesTab;
   });
@@ -217,13 +247,43 @@ const AdminVerify = () => {
       </Card>
 
       {/* Tabs for filtering */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        setSubTab("all"); // Reset subtab when main tab changes
+      }} className="mb-6">
         <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="doctors">Doctors</TabsTrigger>
-          <TabsTrigger value="hospitals">Hospitals</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="verified">Verified</TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* Sub-tabs for Pending and Verified */}
+      {(activeTab === "pending" || activeTab === "verified") && (
+        <div className="mb-6 flex gap-2">
+          <Button
+            variant={subTab === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSubTab("all")}
+          >
+            All
+          </Button>
+          <Button
+            variant={subTab === "doctors" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSubTab("doctors")}
+          >
+            Doctors
+          </Button>
+          <Button
+            variant={subTab === "hospitals" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSubTab("hospitals")}
+          >
+            Hospitals
+          </Button>
+        </div>
+      )}
 
       {/* Verifications List */}
       <div className="space-y-4">
@@ -254,27 +314,19 @@ const AdminVerify = () => {
                   Registered: {formatDate(item.createdAt)}
                 </div>
                 <div className="flex gap-2">
-                  {!item.isVerified && (
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleApprove(item.id, item.uid)}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                  )}
-                  {item.isVerified && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => handleReject(item.id, item.uid)}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Revoke
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const route = item.role?.toLowerCase() === "hospital"
+                        ? `/admin/hospital/${item.profileId}`
+                        : `/admin/doctor/${item.profileId}`;
+                      navigate(route);
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Profile
+                  </Button>
                 </div>
               </div>
             </CardContent>
