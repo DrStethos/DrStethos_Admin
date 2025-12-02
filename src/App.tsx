@@ -10,6 +10,10 @@ import TermsForHospitals from "./pages/TermsForHospitals";
 import TermsForDoctors from "./pages/TermsForDoctors";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
+import AdminLogin from "./pages/AdminLogin";
+import AdminLayout from "./pages/AdminLayout";
+import AdminHome from "./pages/AdminHome";
+import AdminVerify from "./pages/AdminVerify";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +30,14 @@ const App = () => (
           <Route path="/privacy-policy/delete-account" element={<DeleteAccount />} />
           <Route path="/termsandservices/forhospitals" element={<TermsForHospitals />} />
           <Route path="/termsandservices/fordoctors" element={<TermsForDoctors />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="home" element={<AdminHome />} />
+            <Route path="verify" element={<AdminVerify />} />
+          </Route>
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
