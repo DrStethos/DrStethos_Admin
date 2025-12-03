@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -51,13 +53,26 @@ interface DoctorProfile {
   isActive: boolean;
 }
 
+interface UserData {
+  verifiedAt?: any;
+  verifiedByAdminUid?: string;
+  verifiedByAdminEmail?: string;
+  rejectedAt?: any;
+  rejectedByAdminUid?: string;
+  rejectedByAdminEmail?: string;
+  rejectionReason?: string;
+}
+
 const DoctorProfile = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState<DoctorProfile | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     if (profileId) {
@@ -74,7 +89,15 @@ const DoctorProfile = () => {
       const doctorDoc = await getDoc(doctorRef);
 
       if (doctorDoc.exists()) {
-        setDoctor({ id: doctorDoc.id, ...doctorDoc.data() } as DoctorProfile);
+        const doctorData = { id: doctorDoc.id, ...doctorDoc.data() } as DoctorProfile;
+        setDoctor(doctorData);
+
+        // Fetch user data to get admin verification/rejection details
+        const userRef = doc(db, "users", doctorData.userId);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          setUserData(userDoc.data() as UserData);
+        }
       } else {
         toast.error("Doctor profile not found");
         navigate("/admin/verify");
@@ -135,12 +158,27 @@ const DoctorProfile = () => {
         verifiedAt: verifiedAt,
         verifiedByAdminUid: currentAdmin.uid,
         verifiedByAdminEmail: currentAdmin.email || "N/A",
+        rejectedAt: null,
+        rejectionReason: null,
+        rejectedByAdminUid: null,
+        rejectedByAdminEmail: null,
       });
 
       // Update local state
       setDoctor({
         ...doctor,
         isVerified: true,
+      });
+
+      setUserData({
+        ...userData,
+        verifiedAt: verifiedAt,
+        verifiedByAdminUid: currentAdmin.uid,
+        verifiedByAdminEmail: currentAdmin.email || "N/A",
+        rejectedAt: null,
+        rejectionReason: null,
+        rejectedByAdminUid: null,
+        rejectedByAdminEmail: null,
       });
 
       toast.success("Doctor verified successfully");
@@ -152,22 +190,43 @@ const DoctorProfile = () => {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = () => {
+    setShowRejectDialog(true);
+  };
+
+  const confirmReject = async () => {
     if (!doctor || !profileId) return;
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
 
     setIsProcessing(true);
     try {
+      const currentAdmin = auth.currentUser;
+      if (!currentAdmin) {
+        toast.error("Admin authentication required");
+        setIsProcessing(false);
+        return;
+      }
+
+      const rejectedAt = new Date();
+
       // Update doctor document
       const doctorRef = doc(db, "doctors", profileId);
       await updateDoc(doctorRef, {
         isVerified: false,
-        updatedAt: new Date(),
+        updatedAt: rejectedAt,
       });
 
-      // Update user document
+      // Update user document with rejection reason and admin info
       const userRef = doc(db, "users", doctor.userId);
       await updateDoc(userRef, {
         isVerified: false,
+        rejectionReason: rejectionReason.trim(),
+        rejectedAt: rejectedAt,
+        rejectedByAdminUid: currentAdmin.uid,
+        rejectedByAdminEmail: currentAdmin.email || "N/A",
       });
 
       // Update local state
@@ -176,6 +235,16 @@ const DoctorProfile = () => {
         isVerified: false,
       });
 
+      setUserData({
+        ...userData,
+        rejectedAt: rejectedAt,
+        rejectionReason: rejectionReason.trim(),
+        rejectedByAdminUid: currentAdmin.uid,
+        rejectedByAdminEmail: currentAdmin.email || "N/A",
+      });
+
+      setShowRejectDialog(false);
+      setRejectionReason("");
       toast.error("Doctor verification rejected");
     } catch (error) {
       console.error("Error rejecting doctor:", error);
@@ -442,6 +511,33 @@ const DoctorProfile = () => {
             </CardContent>
           </Card>
 
+          {/* Admin Action History */}
+          {userData && (userData.rejectionReason || userData.rejectedAt) && (
+            <Card className="border-red-200 bg-red-50">
+              <CardHeader>
+                <CardTitle className="text-sm">Rejection Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                <div className="p-2 bg-white rounded border border-red-200">
+                  <p className="font-semibold text-red-700 mb-1">✗ Application Rejected</p>
+                  {userData.rejectedByAdminEmail && (
+                    <p className="text-slate-600">By: {userData.rejectedByAdminEmail}</p>
+                  )}
+                  {userData.rejectedAt && (
+                    <p className="text-slate-500">
+                      {userData.rejectedAt.toDate().toLocaleString()}
+                    </p>
+                  )}
+                  {userData.rejectionReason && (
+                    <p className="text-slate-700 mt-2 p-2 bg-red-50 rounded italic">
+                      <span className="font-semibold not-italic">Reason:</span> {userData.rejectionReason}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Metadata */}
           <Card>
             <CardHeader>
@@ -471,6 +567,46 @@ const DoctorProfile = () => {
           </Card>
         </div>
       </div>
+
+      {/* Rejection Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Application</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this doctor's application. This will be shared with the applicant.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Enter rejection reason..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              rows={5}
+              className="resize-none"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectDialog(false);
+                setRejectionReason("");
+              }}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmReject}
+              disabled={isProcessing || !rejectionReason.trim()}
+            >
+              {isProcessing ? "Rejecting..." : "Confirm Rejection"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
