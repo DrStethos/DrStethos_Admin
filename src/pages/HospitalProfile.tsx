@@ -471,7 +471,9 @@ const HospitalProfile = () => {
                   )}
                   {userData.rejectedAt && (
                     <p className="text-slate-500">
-                      {userData.rejectedAt.toDate().toLocaleString()}
+                      {typeof userData.rejectedAt?.toDate === 'function'
+                        ? userData.rejectedAt.toDate().toLocaleString()
+                        : new Date(userData.rejectedAt).toLocaleString()}
                     </p>
                   )}
                   {userData.rejectionReason && (
