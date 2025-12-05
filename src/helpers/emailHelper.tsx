@@ -18,7 +18,7 @@ export const sendApprovalEmail = async ({
       {
         profile_name: profileName,
         profile_type: profileType,
-        to_email: "khasimsharif12@gmail.com",
+        to_email: toEmail,
         dashboard_link: dashboardLink,
       },
       PUBLIC_KEY
@@ -46,7 +46,7 @@ export const sendRejectionEmail = async ({
         profile_name: profileName,
         profile_type: profileType,
         rejection_reason: rejectionReason,
-        to_email: "khasimsharif12@gmail.com",
+        to_email: toEmail,
       },
       PUBLIC_KEY
     );
