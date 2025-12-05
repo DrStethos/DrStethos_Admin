@@ -1,14 +1,30 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+
 import { toast } from "sonner";
+
 import {
   ArrowLeft,
   User,
@@ -16,23 +32,26 @@ import {
   Phone,
   MapPin,
   Briefcase,
-  GraduationCap,
+  FileText,
+  Award,
   Calendar,
   CheckCircle,
   XCircle,
-  FileText,
-  Award,
 } from "lucide-react";
+
+import {
+  sendApprovalEmail,
+  sendRejectionEmail,
+} from "@/helpers/emailHelper";
 
 interface Certificate {
   id: string;
   fileName: string;
   fileUrl: string;
   createdAt: any;
-  updatedAt: any;
 }
 
-interface DoctorProfile {
+interface DoctorProfileType {
   id: string;
   userId: string;
   name: string;
@@ -53,57 +72,40 @@ interface DoctorProfile {
   isActive: boolean;
 }
 
-interface UserData {
-  verifiedAt?: any;
-  verifiedByAdminUid?: string;
-  verifiedByAdminEmail?: string;
-  rejectedAt?: any;
-  rejectedByAdminUid?: string;
-  rejectedByAdminEmail?: string;
-  rejectionReason?: string;
-}
-
 const DoctorProfile = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const navigate = useNavigate();
-  const [doctor, setDoctor] = useState<DoctorProfile | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
+
+  const [doctor, setDoctor] = useState<DoctorProfileType | null>(null);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // rejection dialog
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
+  // Fetch doctor profile
   useEffect(() => {
-    if (profileId) {
-      fetchDoctorProfile();
-      fetchCertificates();
-    }
+    if (!profileId) return;
+    fetchDoctorProfile();
+    fetchCertificates();
   }, [profileId]);
 
   const fetchDoctorProfile = async () => {
     try {
-      if (!profileId) return;
+      const ref = doc(db, "doctors", profileId!);
+      const snap = await getDoc(ref);
 
-      const doctorRef = doc(db, "doctors", profileId);
-      const doctorDoc = await getDoc(doctorRef);
-
-      if (doctorDoc.exists()) {
-        const doctorData = { id: doctorDoc.id, ...doctorDoc.data() } as DoctorProfile;
-        setDoctor(doctorData);
-
-        // Fetch user data to get admin verification/rejection details
-        const userRef = doc(db, "users", doctorData.userId);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          setUserData(userDoc.data() as UserData);
-        }
-      } else {
+      if (!snap.exists()) {
         toast.error("Doctor profile not found");
         navigate("/admin/verify");
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching doctor profile:", error);
+
+      setDoctor({ id: snap.id, ...(snap.data() as any) });
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to load doctor profile");
     } finally {
       setIsLoading(false);
@@ -112,167 +114,200 @@ const DoctorProfile = () => {
 
   const fetchCertificates = async () => {
     try {
-      if (!profileId) return;
-
-      const certificatesRef = collection(db, "doctors", profileId, "certificates");
-      const certificatesSnapshot = await getDocs(certificatesRef);
-
-      const certs: Certificate[] = [];
-      certificatesSnapshot.forEach((doc) => {
-        certs.push({ id: doc.id, ...doc.data() } as Certificate);
-      });
-
-      setCertificates(certs);
-    } catch (error) {
-      console.error("Error fetching certificates:", error);
+      const certRef = collection(db, "doctors", profileId!, "certificates");
+      const certSnap = await getDocs(certRef);
+      const list: Certificate[] = [];
+      certSnap.forEach((doc) => list.push({ id: doc.id, ...(doc.data() as any) }));
+      setCertificates(list);
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to load certificates");
+
     }
   };
 
+  // Firestore queue utility
+  const enqueueNotifications = async (
+    userId: string,
+    name: string,
+    email: string | undefined,
+    fcmToken: string | undefined,
+    applicationId: string,
+    status: "APPROVED" | "REJECTED"
+  ) => {
+    try {
+      const subject =
+        status === "APPROVED"
+          ? "Your Application Has Been Approved 🎉"
+          : "Update on Your Application";
+
+      const text =
+        status === "APPROVED"
+          ? `Hi ${name}, your profile (ID ${applicationId}) has been approved.`
+          : `Hi ${name}, your profile (ID ${applicationId}) was not approved.`;
+
+      const html =
+        status === "APPROVED"
+          ? `<p>Hi ${name},</p><p>Your profile has been approved.</p>`
+          : `<p>Hi ${name},</p><p>Your profile was not approved.</p>`;
+
+      if (email) {
+        await addDoc(collection(db, "mail"), {
+          to: email,
+          message: { subject, text, html },
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      if (fcmToken) {
+        await addDoc(collection(db, "fcm_messages"), {
+          token: fcmToken,
+          notification: {
+            title: subject,
+            body: text,
+          },
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      console.error("Notification enqueue error:", err);
+    }
+  };
+
+  // Approve doctor
   const handleApprove = async () => {
     if (!doctor || !profileId) return;
-
     setIsProcessing(true);
+
     try {
-      const currentAdmin = auth.currentUser;
-      if (!currentAdmin) {
+      const admin = auth.currentUser;
+      if (!admin) {
         toast.error("Admin authentication required");
-        setIsProcessing(false);
         return;
       }
 
-      const verifiedAt = new Date();
-
-      // Update doctor document (without admin info)
       const doctorRef = doc(db, "doctors", profileId);
       await updateDoc(doctorRef, {
         isVerified: true,
-        verifiedAt: verifiedAt,
+        verifiedAt: new Date(),
         updatedAt: new Date(),
       });
 
-      // Update user document with admin information
       const userRef = doc(db, "users", doctor.userId);
       await updateDoc(userRef, {
         isVerified: true,
-        verifiedAt: verifiedAt,
-        verifiedByAdminUid: currentAdmin.uid,
-        verifiedByAdminEmail: currentAdmin.email || "N/A",
-        rejectedAt: null,
-        rejectionReason: null,
-        rejectedByAdminUid: null,
-        rejectedByAdminEmail: null,
+        verifiedAt: new Date(),
+        verifiedByAdminUid: admin.uid,
+        verifiedByAdminEmail: admin.email || "N/A",
       });
 
-      // Update local state
-      setDoctor({
-        ...doctor,
-        isVerified: true,
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data() as any;
+
+      console.log("User data:"+userData);
+
+      await enqueueNotifications(
+        doctor.userId,
+        doctor.name,
+        userData?.email,
+        userData?.fcmToken,
+        profileId,
+        "APPROVED"
+      );
+
+      // Send approval email
+      await sendApprovalEmail({
+        toEmail: doctor.email,
+        profileName: doctor.name,
+        profileType: "Doctor",
+        dashboardLink: "https://drstethos.com",
       });
 
-      setUserData({
-        ...userData,
-        verifiedAt: verifiedAt,
-        verifiedByAdminUid: currentAdmin.uid,
-        verifiedByAdminEmail: currentAdmin.email || "N/A",
-        rejectedAt: null,
-        rejectionReason: null,
-        rejectedByAdminUid: null,
-        rejectedByAdminEmail: null,
-      });
-
+      setDoctor({ ...doctor, isVerified: true });
       toast.success("Doctor verified successfully");
-    } catch (error) {
-      console.error("Error approving doctor:", error);
-      toast.error("Failed to verify doctor");
+    } catch (err) {
+      console.error(err);
+      toast.error("Verification failed");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleReject = () => {
-    setShowRejectDialog(true);
-  };
-
+  // Reject doctor
   const confirmReject = async () => {
     if (!doctor || !profileId) return;
     if (!rejectionReason.trim()) {
-      toast.error("Please provide a reason for rejection");
+      toast.error("Please enter a reason");
       return;
     }
 
     setIsProcessing(true);
+
     try {
-      const currentAdmin = auth.currentUser;
-      if (!currentAdmin) {
+      const admin = auth.currentUser;
+      if (!admin) {
         toast.error("Admin authentication required");
-        setIsProcessing(false);
         return;
       }
 
-      const rejectedAt = new Date();
-
-      // Update doctor document
       const doctorRef = doc(db, "doctors", profileId);
       await updateDoc(doctorRef, {
         isVerified: false,
-        updatedAt: rejectedAt,
+        updatedAt: new Date(),
       });
 
-      // Update user document with rejection reason and admin info
       const userRef = doc(db, "users", doctor.userId);
       await updateDoc(userRef, {
         isVerified: false,
-        rejectionReason: rejectionReason.trim(),
-        rejectedAt: rejectedAt,
-        rejectedByAdminUid: currentAdmin.uid,
-        rejectedByAdminEmail: currentAdmin.email || "N/A",
+        rejectionReason,
+        rejectedAt: new Date(),
+        rejectedByAdminUid: admin.uid,
+        rejectedByAdminEmail: admin.email || "N/A",
       });
 
-      // Update local state
-      setDoctor({
-        ...doctor,
-        isVerified: false,
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data() as any;
+
+      await enqueueNotifications(
+        doctor.userId,
+        doctor.name,
+        userData?.email,
+        userData?.fcmToken,
+        profileId,
+        "REJECTED"
+      );
+
+      // Send rejection email
+      await sendRejectionEmail({
+        toEmail: doctor.email,
+        profileName: doctor.name,
+        profileType: "Doctor",
+        rejectionReason,
       });
 
-      setUserData({
-        ...userData,
-        rejectedAt: rejectedAt,
-        rejectionReason: rejectionReason.trim(),
-        rejectedByAdminUid: currentAdmin.uid,
-        rejectedByAdminEmail: currentAdmin.email || "N/A",
-      });
-
-      setShowRejectDialog(false);
-      setRejectionReason("");
+      setDoctor({ ...doctor, isVerified: false });
       toast.error("Doctor verification rejected");
-    } catch (error) {
-      console.error("Error rejecting doctor:", error);
-      toast.error("Failed to reject verification");
+    } catch (err) {
+      console.error(err);
+      toast.error("Rejection failed");
     } finally {
       setIsProcessing(false);
+      setShowRejectDialog(false);
+      setRejectionReason("");
     }
   };
 
+  const handleRejectClick = () => setShowRejectDialog(true);
+
   if (isLoading) {
-    return (
-      <div className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-1/4"></div>
-          <div className="h-64 bg-slate-200 rounded"></div>
-          <div className="h-64 bg-slate-200 rounded"></div>
-        </div>
-      </div>
-    );
+    return <div className="p-8">Loading…</div>;
   }
 
   if (!doctor) {
     return (
       <div className="p-8">
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-slate-500">Doctor profile not found</p>
-          </CardContent>
+          <CardContent className="py-12 text-center">Doctor not found</CardContent>
         </Card>
       </div>
     );
@@ -282,17 +317,17 @@ const DoctorProfile = () => {
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate("/admin/verify")} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate("/admin/verify")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Verifications
         </Button>
-        <div className="flex items-start justify-between">
+
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">{doctor.name}</h1>
+            <h1 className="text-3xl font-bold">{doctor.name}</h1>
             <p className="text-slate-500 mt-2">Doctor Profile Verification</p>
           </div>
           <Badge
-            variant={doctor.isVerified ? "default" : "secondary"}
             className={
               doctor.isVerified
                 ? "bg-green-100 text-green-800"
@@ -304,10 +339,11 @@ const DoctorProfile = () => {
         </div>
       </div>
 
+      {/* Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Information */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Profile Photo */}
+
+        {/* LEFT SIDE */}
+        <div className="space-y-6 lg:col-span-2">
           {doctor.profilePhotoUrl && (
             <Card>
               <CardHeader>
@@ -316,14 +352,12 @@ const DoctorProfile = () => {
               <CardContent>
                 <img
                   src={doctor.profilePhotoUrl}
-                  alt={doctor.name}
                   className="w-full h-64 object-cover rounded-lg"
                 />
               </CardContent>
             </Card>
           )}
 
-          {/* Basic Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -331,37 +365,21 @@ const DoctorProfile = () => {
                 Basic Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {doctor.age && (
-                  <div>
-                    <p className="text-sm text-slate-500">Age</p>
-                    <p className="font-medium">{doctor.age} years</p>
-                  </div>
-                )}
-                {doctor.gender && (
-                  <div>
-                    <p className="text-sm text-slate-500">Gender</p>
-                    <p className="font-medium capitalize">{doctor.gender}</p>
-                  </div>
-                )}
-                {doctor.mcaNumber && (
-                  <div>
-                    <p className="text-sm text-slate-500">MCA Number</p>
-                    <p className="font-medium">{doctor.mcaNumber}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm text-slate-500">Active Status</p>
-                  <Badge variant={doctor.isActive ? "default" : "secondary"}>
-                    {doctor.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </div>
+            <CardContent>
+              <p className="text-sm text-slate-600">Email: {doctor.email}</p>
+              {doctor.phoneNumber && (
+                <p className="text-sm text-slate-600">
+                  Phone: {doctor.phoneNumber}
+                </p>
+              )}
+              {doctor.gender && (
+                <p className="text-sm text-slate-600 capitalize">
+                  Gender: {doctor.gender}
+                </p>
+              )}
             </CardContent>
           </Card>
 
-          {/* Professional Details */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -369,225 +387,114 @@ const DoctorProfile = () => {
                 Professional Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-slate-500">Specialization</p>
-                  <p className="font-medium">{doctor.specialization}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Experience</p>
-                  <p className="font-medium">{doctor.yearsOfExperience} years</p>
-                </div>
-              </div>
+            <CardContent>
+              <p>Specialization: {doctor.specialization}</p>
+              <p>Experience: {doctor.yearsOfExperience} years</p>
               {doctor.qualifications && (
-                <div>
-                  <p className="text-sm text-slate-500">Qualifications</p>
-                  <p className="font-medium">{doctor.qualifications}</p>
-                </div>
-              )}
-              {doctor.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-sm text-slate-500">Location</p>
-                    <p className="font-medium">{doctor.location}</p>
-                  </div>
-                </div>
+                <p>Qualifications: {doctor.qualifications}</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Contact Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-slate-500" />
-                <div>
-                  <p className="text-sm text-slate-500">Email</p>
-                  <p className="font-medium">{doctor.email}</p>
-                </div>
-              </div>
-              {doctor.phoneNumber && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-sm text-slate-500">Phone Number</p>
-                    <p className="font-medium">{doctor.phoneNumber}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Bio */}
           {doctor.bio && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  About Doctor
+                <CardTitle>
+                  <FileText className="h-5 w-5" /> Bio
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-700 whitespace-pre-wrap">{doctor.bio}</p>
+                <p className="whitespace-pre-wrap">{doctor.bio}</p>
               </CardContent>
             </Card>
           )}
 
-          {/* Certificates */}
           {certificates.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Certificates ({certificates.length})
+                <CardTitle>
+                  <Award className="h-5 w-5" /> Certificates
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {certificates.map((cert) => (
-                    <div
-                      key={cert.id}
-                      className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-slate-500" />
-                        <div>
-                          <p className="font-medium">{cert.fileName}</p>
-                          <p className="text-xs text-slate-500">
-                            Uploaded: {cert.createdAt?.toDate().toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <a
-                        href={cert.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        View
-                      </a>
+                {certificates.map((c) => (
+                  <div key={c.id} className="border p-3 rounded mb-2 flex justify-between">
+                    <div>
+                      <p>{c.fileName}</p>
                     </div>
-                  ))}
-                </div>
+                    <a
+                      href={c.fileUrl}
+                      target="_blank"
+                      className="text-blue-600 underline"
+                    >
+                      View
+                    </a>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* RIGHT SIDE */}
         <div className="space-y-6">
-          {/* Actions */}
           <Card>
             <CardHeader>
               <CardTitle>Verification Actions</CardTitle>
-              <CardDescription>Review and approve or reject this application</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+
               <Button
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-green-600"
+                disabled={doctor.isVerified || isProcessing}
                 onClick={handleApprove}
-                disabled={isProcessing || doctor.isVerified}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {doctor.isVerified ? "Already Approved" : "Approve Application"}
+                Approve Application
               </Button>
+
               <Button
                 variant="outline"
-                className="w-full text-red-600 border-red-200 hover:bg-red-50"
-                onClick={handleReject}
+                className="w-full text-red-600 border-red-200"
+                onClick={handleRejectClick}
                 disabled={isProcessing}
               >
                 <XCircle className="h-4 w-4 mr-2" />
-                {doctor.isVerified ? "Revoke Verification" : "Reject Application"}
+                Reject Application
               </Button>
+
             </CardContent>
           </Card>
 
-          {/* Admin Action History */}
-          {userData && (userData.rejectionReason || userData.rejectedAt) && (
-            <Card className="border-red-200 bg-red-50">
-              <CardHeader>
-                <CardTitle className="text-sm">Rejection Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-xs">
-                <div className="p-2 bg-white rounded border border-red-200">
-                  <p className="font-semibold text-red-700 mb-1">✗ Application Rejected</p>
-                  {userData.rejectedByAdminEmail && (
-                    <p className="text-slate-600">By: {userData.rejectedByAdminEmail}</p>
-                  )}
-                  {userData.rejectedAt && (
-                    <p className="text-slate-500">
-                      {typeof userData.rejectedAt?.toDate === 'function'
-                        ? userData.rejectedAt.toDate().toLocaleString()
-                        : new Date(userData.rejectedAt).toLocaleString()}
-                    </p>
-                  )}
-                  {userData.rejectionReason && (
-                    <p className="text-slate-700 mt-2 p-2 bg-red-50 rounded italic">
-                      <span className="font-semibold not-italic">Reason:</span> {userData.rejectionReason}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Metadata */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Timeline
+              <CardTitle>
+                <Calendar className="h-5 w-5" /> Timeline
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm text-slate-500">Created At</p>
-                <p className="font-medium">
-                  {doctor.createdAt?.toDate().toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Last Updated</p>
-                <p className="font-medium">
-                  {doctor.updatedAt?.toDate().toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">User ID</p>
-                <p className="font-mono text-xs">{doctor.userId}</p>
-              </div>
+            <CardContent>
+              <p>Created: {doctor.createdAt?.toDate?.().toLocaleString()}</p>
+              <p>Updated: {doctor.updatedAt?.toDate?.().toLocaleString()}</p>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Rejection Dialog */}
+      {/* REJECTION DIALOG */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Application</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this doctor's application. This will be shared with the applicant.
-            </DialogDescription>
+            <DialogDescription>Provide a reason for rejection.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Enter rejection reason..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              rows={5}
-              className="resize-none"
-            />
-          </div>
+
+          <Textarea
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            rows={5}
+            placeholder="Enter rejection reason..."
+          />
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -595,16 +502,16 @@ const DoctorProfile = () => {
                 setShowRejectDialog(false);
                 setRejectionReason("");
               }}
-              disabled={isProcessing}
             >
               Cancel
             </Button>
-            <Button
+
+              <Button
               variant="destructive"
+              disabled={!rejectionReason.trim() || isProcessing}
               onClick={confirmReject}
-              disabled={isProcessing || !rejectionReason.trim()}
             >
-              {isProcessing ? "Rejecting..." : "Confirm Rejection"}
+              Confirm Rejection
             </Button>
           </DialogFooter>
         </DialogContent>

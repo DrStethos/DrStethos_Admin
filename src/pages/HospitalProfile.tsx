@@ -2,11 +2,24 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
@@ -22,6 +35,10 @@ import {
   XCircle,
   Eye,
 } from "lucide-react";
+import {
+  sendApprovalEmail,
+  sendRejectionEmail,
+} from "@/helpers/emailHelper";
 
 interface HospitalProfile {
   id: string;
@@ -83,7 +100,10 @@ const HospitalProfile = () => {
       const hospitalDoc = await getDoc(hospitalRef);
 
       if (hospitalDoc.exists()) {
-        const hospitalData = { id: hospitalDoc.id, ...hospitalDoc.data() } as HospitalProfile;
+        const hospitalData = {
+          id: hospitalDoc.id,
+          ...hospitalDoc.data(),
+        } as HospitalProfile;
         setHospital(hospitalData);
 
         // Fetch user data to get admin verification/rejection details
@@ -155,6 +175,15 @@ const HospitalProfile = () => {
         rejectedByAdminUid: null,
         rejectedByAdminEmail: null,
       });
+      console.log("Hospital approved:", hospital.name);
+
+      // Send approval email
+      await sendApprovalEmail({
+        toEmail: hospital.email,
+        profileName: hospital.name,
+        profileType: "Hospital",
+        dashboardLink: "https://drstethos.com",
+      });
 
       toast.success("Hospital verified successfully");
     } catch (error) {
@@ -219,6 +248,15 @@ const HospitalProfile = () => {
       });
 
       setShowRejectDialog(false);
+
+      // Send rejection email
+      await sendRejectionEmail({
+        toEmail: hospital.email,
+        profileName: hospital.name,
+        profileType: "Hospital",
+        rejectionReason: rejectionReason,
+      });
+
       setRejectionReason("");
       toast.error("Hospital verification rejected");
     } catch (error) {
@@ -257,13 +295,19 @@ const HospitalProfile = () => {
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate("/admin/verify")} className="mb-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/admin/verify")}
+          className="mb-4"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Verifications
         </Button>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">{hospital.name}</h1>
+            <h1 className="text-3xl font-bold text-slate-900">
+              {hospital.name}
+            </h1>
             <p className="text-slate-500 mt-2">Hospital Profile Verification</p>
           </div>
           <Badge
@@ -402,7 +446,9 @@ const HospitalProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-700 whitespace-pre-wrap">{hospital.aboutHospital}</p>
+                <p className="text-slate-700 whitespace-pre-wrap">
+                  {hospital.aboutHospital}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -434,7 +480,9 @@ const HospitalProfile = () => {
           <Card>
             <CardHeader>
               <CardTitle>Verification Actions</CardTitle>
-              <CardDescription>Review and approve or reject this application</CardDescription>
+              <CardDescription>
+                Review and approve or reject this application
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
@@ -443,7 +491,9 @@ const HospitalProfile = () => {
                 disabled={isProcessing || hospital.isVerified}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {hospital.isVerified ? "Already Approved" : "Approve Application"}
+                {hospital.isVerified
+                  ? "Already Approved"
+                  : "Approve Application"}
               </Button>
               <Button
                 variant="outline"
@@ -452,7 +502,9 @@ const HospitalProfile = () => {
                 disabled={isProcessing}
               >
                 <XCircle className="h-4 w-4 mr-2" />
-                {hospital.isVerified ? "Revoke Verification" : "Reject Application"}
+                {hospital.isVerified
+                  ? "Revoke Verification"
+                  : "Reject Application"}
               </Button>
             </CardContent>
           </Card>
@@ -465,20 +517,25 @@ const HospitalProfile = () => {
               </CardHeader>
               <CardContent className="space-y-2 text-xs">
                 <div className="p-2 bg-white rounded border border-red-200">
-                  <p className="font-semibold text-red-700 mb-1">✗ Application Rejected</p>
+                  <p className="font-semibold text-red-700 mb-1">
+                    ✗ Application Rejected
+                  </p>
                   {userData.rejectedByAdminEmail && (
-                    <p className="text-slate-600">By: {userData.rejectedByAdminEmail}</p>
+                    <p className="text-slate-600">
+                      By: {userData.rejectedByAdminEmail}
+                    </p>
                   )}
                   {userData.rejectedAt && (
                     <p className="text-slate-500">
-                      {typeof userData.rejectedAt?.toDate === 'function'
+                      {typeof userData.rejectedAt?.toDate === "function"
                         ? userData.rejectedAt.toDate().toLocaleString()
                         : new Date(userData.rejectedAt).toLocaleString()}
                     </p>
                   )}
                   {userData.rejectionReason && (
                     <p className="text-slate-700 mt-2 p-2 bg-red-50 rounded italic">
-                      <span className="font-semibold not-italic">Reason:</span> {userData.rejectionReason}
+                      <span className="font-semibold not-italic">Reason:</span>{" "}
+                      {userData.rejectionReason}
                     </p>
                   )}
                 </div>
@@ -522,7 +579,8 @@ const HospitalProfile = () => {
           <DialogHeader>
             <DialogTitle>Reject Application</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this hospital's application. This will be shared with the applicant.
+              Please provide a reason for rejecting this hospital's application.
+              This will be shared with the applicant.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
