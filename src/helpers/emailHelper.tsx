@@ -24,7 +24,7 @@ export const sendApprovalEmail = async ({
       PUBLIC_KEY
     );
 
-    console.log("Approval Email Sent:", response);
+    // console.log("Approval Email Sent:", response);
     return true;
   } catch (error) {
     console.error("Approval Email Error:", error);
@@ -51,7 +51,7 @@ export const sendRejectionEmail = async ({
       PUBLIC_KEY
     );
 
-    console.log("Rejection Email Sent:", response);
+    // console.log("Rejection Email Sent:", response);
     return true;
   } catch (error) {
     console.error("Rejection Email Error:", error);
